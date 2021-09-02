@@ -1,3 +1,4 @@
+from sys import argv
 IP = [2,6,3,1,4,8,5,7]
 IPINV = [4,1,3,5,7,2,8,6]
 P4 = [2,4,3,1]
@@ -90,26 +91,7 @@ def apply_f_k(initial_permutation, subkey):
 #   Se obtiene el SW
     return ptL_xor_P4 + ptR
 
-#Empieza aqui el Simplified-DES, el plaintext se podría recibir por input. pkey es la llave para la permutacion de 10.
-plaintext = '0000010011'
-pkey = [3,5,2,7,4,10,1,9,8,6]
-pstring = permute(plaintext, pkey)
-
-#Aqui se hace el left-shift para ambas mitades de la cadena. pkey2 es para hacer la permutacion de 8 al concatenar ambas mitades
-concatenaded_string1 = left_shift(pstring[:len(pstring)//2], 1) + left_shift(pstring[len(pstring)//2:], 1)
-pkey2 = [4,1,5,2,6,3,8,7]
-primera_llave = permute(concatenaded_string1[2:], pkey2)
-#print('Primer resultado: ', primer_resultado)
-
-#Se usa el resultado no permutado anterior para hacer otra vez doble left-shift para obtener la segunda permutacion de 8 
-concatenaded_string2 = left_shift(concatenaded_string1[:len(concatenaded_string1)//2], 2) + left_shift(concatenaded_string1[len(concatenaded_string1)//2:], 2)
-segunda_llave = permute(concatenaded_string2[2:], pkey2)
-#print('Segundo resultado: ', segundo_resultado)
-
-if __name__ == "__main__": 
-    main_key =  '1010000010'
-    plain_text =  '10010111'
-
+def encriptar(main_key, plain_text):
     if len(plain_text) != 8 or len(main_key) != 10:
         print("Either the main key or the plain text are of unadequate legth.")
         exit()
@@ -130,3 +112,51 @@ if __name__ == "__main__":
 #   Se aplica la IP inversa, para obtener el verdadero Cipher Text
     cipher_text = permute(preCT, IPINV)
     print('Cipher Text: ', cipher_text)
+
+def desencriptar(main_key, cipher_text):
+    pass
+
+def verificar_tamano(cadena_binarios):
+    tamano_binarios = len(cadena_binarios)
+    cadena_completa = '0'*(10-tamano_binarios) + cadena_binarios
+    return cadena_completa
+
+def generar_llaves():
+    for i in range(0, 160):
+        x = bin(i).replace("0b", "")
+        llave = verificar_tamano(x)
+        print(llave)
+
+if __name__ == "__main__": 
+    if len(argv) > 1:
+        args = argv[1:]
+        file_path = args[0]
+    else: 
+        print("""
+        Uso: 
+        python main.py [option] arguments
+        -e          Encrypt: python main.py -e main_key plain_text
+        -d          Decrypt: python main.py -d main_key cipher_text
+        -b          Brute Force the key: python main.py -b plain_text cipher_text
+        """)
+        exit()
+
+    if args[0].startswith('-'):
+        if args[0] == '-e':
+            main_key = args[1]
+            plain_text = args[2]
+            encriptar(main_key, plain_text)
+        elif args[0] == '-d':
+            pass
+        elif args[0] == '-b':
+            pass
+        else:
+            print("Unknown option: ", args[0])
+            exit()
+    else:
+        main_key = args[0]
+        plain_text = args[1]
+        encriptar(main_key, plain_text)
+     
+    #main_key =  '1010000010'
+    #plain_text =  '10010111'
