@@ -68,6 +68,29 @@ def apply_f_k(initial_permutation, subkey):
     ptR = initial_permutation[4:]
 #   Se obtiene E/P del lado derecho de IP(plain_text)
     EPofR = permute(ptR, EP)
+#   Se realiza XOR entre el resultado anterior y la subllave1
+    EPxorK = xor_compare(EPofR, subkey)
+    L4xor = EPxorK[:4]
+    L4xor = ''.join(str(e) for e in L4xor)
+    R4xor = EPxorK[4:]
+    R4xor = ''.join(str(e) for e in R4xor)
+#   Se aplica S0 a L4 y S1 a R4
+    S0_of_L4 = apply_matrix(L4xor, S0)
+    S1_of_R4 = apply_matrix(R4xor, S1)
+    
+#   Se aplica P4 a la concatenacion de ambos resultados anteriores
+    P4_of_s0_s1 = permute(S0_of_L4 + S1_of_R4, P4)
+#   Se Aplica xor a ptL con el resultado anterior
+    ptL_xor_P4 = ''.join( str(e) for e in xor_compare(ptL, P4_of_s0_s1))
+#   Se obtiene el SW
+    return ptL_xor_P4 + ptR
+
+# Apply the general loop of fk to an initially permutated plain text
+def apply_f_k_verbose(initial_permutation, subkey):
+    ptL = initial_permutation[:4]
+    ptR = initial_permutation[4:]
+#   Se obtiene E/P del lado derecho de IP(plain_text)
+    EPofR = permute(ptR, EP)
     print('E/P of R: ', EPofR)
 #   Se realiza XOR entre el resultado anterior y la subllave1
     EPxorK = xor_compare(EPofR, subkey)
@@ -104,17 +127,78 @@ def encriptar(main_key, plain_text):
 #   Se aplica fk1 sobre la permutacion inicial del plain text
     preSW = apply_f_k(IPplain_text, sk1)
     SW = preSW[4:] + preSW[:4]
-    print(SW)
 
 #   Se aplica fk2 sobre el SW obtenido y se obtiene el pre-cipher text
     preCT = apply_f_k(SW, sk2)
+#   Se aplica la IP inversa, para obtener el verdadero Cipher Text
+    cipher_text = permute(preCT, IPINV)
+    return cipher_text
+
+def encriptar_verbose(main_key, plain_text):
+    if len(plain_text) != 8 or len(main_key) != 10:
+        print("Either the main key or the plain text are of unadequate legth.")
+        exit()
+#   Se obtiene el par de subllaves
+    sk1, sk2 = obtain_subkeys(main_key)
+
+#   Se realiza la permutacion inicial al plaintext
+    IPplain_text = permute(plain_text, IP)
+
+#   Se aplica fk1 sobre la permutacion inicial del plain text
+    preSW = apply_f_k_verbose(IPplain_text, sk1)
+    SW = preSW[4:] + preSW[:4]
+    print(SW)
+
+#   Se aplica fk2 sobre el SW obtenido y se obtiene el pre-cipher text
+    preCT = apply_f_k_verbose(SW, sk2)
     print(preCT)
 #   Se aplica la IP inversa, para obtener el verdadero Cipher Text
     cipher_text = permute(preCT, IPINV)
     print('Cipher Text: ', cipher_text)
+    return cipher_text
 
 def desencriptar(main_key, cipher_text):
-    pass
+    if len(cipher_text) != 8 or len(main_key) != 10:
+        print("Either the main key or the cipher text are of unadequate legth.")
+        exit()
+#   Se obtiene el par de subllaves
+    sk1, sk2 = obtain_subkeys(main_key)
+
+#   Se realiza la permutacion inicial al plaintext
+    IPcipher_text = permute(cipher_text, IP)
+
+#   Se aplica fk1 sobre la permutacion inicial del plain text
+    preSW = apply_f_k(IPcipher_text, sk2)
+    SW = preSW[4:] + preSW[:4]
+
+#   Se aplica fk2 sobre el SW obtenido y se obtiene el pre-cipher text
+    preCT = apply_f_k(SW, sk1)
+#   Se aplica la IP inversa, para obtener el verdadero Cipher Text
+    plain_text = permute(preCT, IPINV)
+    return plain_text
+
+def desencriptar_verbose(main_key, cipher_text):
+    if len(cipher_text) != 8 or len(main_key) != 10:
+        print("Either the main key or the cipher text are of unadequate legth.")
+        exit()
+#   Se obtiene el par de subllaves
+    sk1, sk2 = obtain_subkeys(main_key)
+
+#   Se realiza la permutacion inicial al plaintext
+    IPcipher_text = permute(cipher_text, IP)
+
+#   Se aplica fk1 sobre la permutacion inicial del plain text
+    preSW = apply_f_k_verbose(IPcipher_text, sk2)
+    SW = preSW[4:] + preSW[:4]
+    print(SW)
+
+#   Se aplica fk2 sobre el SW obtenido y se obtiene el pre-cipher text
+    preCT = apply_f_k_verbose(SW, sk1)
+    print(preCT)
+#   Se aplica la IP inversa, para obtener el verdadero Cipher Text
+    plain_text = permute(preCT, IPINV)
+    print("Plain text: ", plain_text)
+    return plain_text
 
 def verificar_tamano(cadena_binarios):
     tamano_binarios = len(cadena_binarios)
@@ -122,12 +206,55 @@ def verificar_tamano(cadena_binarios):
     return cadena_completa
 
 def generar_llaves():
-    for i in range(0, 160):
+    lista_llaves = []
+    for i in range(0, 1023):
         x = bin(i).replace("0b", "")
         llave = verificar_tamano(x)
-        print(llave)
+        lista_llaves.append(llave)
+    return lista_llaves
+
+def obtener_pares_de_archivo(filename):
+    lista_pares = []
+    with open(filename, encoding='utf-8') as file:
+        for line in file:
+            par = line[:-1].split(',')
+            if len(par) != 2:
+                print('El archivo contiene mas de dos textos por linea.')
+                exit()
+            if len(par[0]) != 8 or len(par[1]) != 8:
+                print('El tamanio de alguno de los pares es diferente a 8.')
+                exit()
+            lista_pares.append(par)
+    return lista_pares
+
+def fuerza_bruta(filename):
+    lista_pares = obtener_pares_de_archivo(filename)
+    lista_llaves = generar_llaves()
+    lista_resultados = []
+
+    for par in lista_pares:
+        for llave in lista_llaves:
+            encrypt_res = encriptar(llave, par[0])
+            if encrypt_res == par[1]:
+                if llave not in lista_resultados:   
+                    lista_resultados.append(llave)
+
+    for llave in lista_resultados:
+        for par in lista_pares:
+            decrypt_res = desencriptar(llave, par[1])
+            if decrypt_res == par[0]:
+                if lista_pares.index(par) == len(lista_pares) - 1:
+                    return llave
+                continue
+            else:
+                break
+
+
+        
 
 if __name__ == "__main__": 
+
+
     if len(argv) > 1:
         args = argv[1:]
         file_path = args[0]
@@ -137,19 +264,31 @@ if __name__ == "__main__":
         python main.py [option] arguments
         -e          Encrypt: python main.py -e main_key plain_text
         -d          Decrypt: python main.py -d main_key cipher_text
-        -b          Brute Force the key: python main.py -b plain_text cipher_text
+        -b          Brute Force the key: python main.py -b filename
+        -v          Verbose Procedures
         """)
         exit()
 
     if args[0].startswith('-'):
-        if args[0] == '-e':
+        if args[0].startswith('-b'):
+            llave = fuerza_bruta(args[1])
+            print(llave)
+        elif args[0].startswith('-d'):
+            main_key = args[1]
+            cipher_text = args[2]
+            if 'v' in args[0]:
+                desencriptar_verbose(main_key, cipher_text)
+            else:
+                pt = desencriptar(main_key, cipher_text)
+                print("Plain text: ", pt)
+        elif args[0].startswith('-e'):
             main_key = args[1]
             plain_text = args[2]
-            encriptar(main_key, plain_text)
-        elif args[0] == '-d':
-            pass
-        elif args[0] == '-b':
-            pass
+            if 'v' in args[0]:
+                encriptar_verbose(main_key, plain_text)
+            else:
+                ct = encriptar(main_key, plain_text)
+                print("Cipher text: ", ct)
         else:
             print("Unknown option: ", args[0])
             exit()
