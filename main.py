@@ -238,6 +238,8 @@ def obtener_pares_de_archivo(filename):
     with open(filename) as file:
         for line in file:
             par = line[:-1].split(',')
+            if par == ['']:
+                break
             if len(par) != 2:
                 print('El archivo contiene mas de dos textos por linea.')
                 exit()
