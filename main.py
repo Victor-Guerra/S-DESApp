@@ -258,9 +258,12 @@ def probar_llave(llave, lista_pares):
 def fuerza_bruta(filename):
     lista_pares = obtener_pares_de_archivo(filename)
     lista_llaves = generar_llaves()
+    lista_resultados = []
     for llave in lista_llaves:
         if probar_llave(llave, lista_pares):
-            return llave
+            lista_resultados.append(llave)
+            # return llave
+    return lista_resultados
 
 
 if __name__ == "__main__":
