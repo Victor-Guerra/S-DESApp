@@ -258,27 +258,9 @@ def probar_llave(llave, lista_pares):
 def fuerza_bruta(filename):
     lista_pares = obtener_pares_de_archivo(filename)
     lista_llaves = generar_llaves()
-
     for llave in lista_llaves:
         if probar_llave(llave, lista_pares):
             return llave
-
-    # for par in lista_pares:
-    #     for llave in lista_llaves:
-    #         encrypt_res = encriptar(llave, par[0])
-    #         if encrypt_res == par[1]:
-    #             if llave not in lista_resultados:
-    #                 lista_resultados.append(llave)
-
-    # for llave in lista_resultados:
-    #     for par in lista_pares:
-    #         decrypt_res = desencriptar(llave, par[1])
-    #         if decrypt_res == par[0]:
-    #             if lista_pares.index(par) == len(lista_pares) - 1:
-    #                 return llave
-    #             continue
-    #         else:
-    #             break
 
 
 if __name__ == "__main__":
